@@ -9,6 +9,18 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Optional[str] = None):
-    return {"item_id": item_id, "q": q}
+@app.get("/add")
+async def add(a:int,b:int):
+   return int(a+b)
+
+@app.get("/sub")
+async def sub(a:int,b:int):
+    return int(a-b)
+
+@app.get("/multiply")
+async def multiply(a:int,b:int):
+    return int(a*b)
+
+@app.get("divison")
+async def division(a:int,b:int):
+    return a/b
