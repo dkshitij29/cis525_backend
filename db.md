@@ -1,0 +1,15 @@
+CREATE TABLE itineraries (
+    itinerary_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    itinerary_name VARCHAR(255) NOT NULL,
+    itinerary_data JSON,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+);
+
+CREATE TABLE customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT, 
+    first_name VARCHAR(255) NOT NULL, 
+    last_name VARCHAR(255) NOT NULL, 
+    email VARCHAR(255) NOT NULL UNIQUE, 
+    password_hash VARCHAR(255) NOT NULL 
+);
