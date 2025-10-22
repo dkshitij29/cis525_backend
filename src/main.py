@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 import bcrypt, json, os
 from dotenv import load_dotenv
-from db import get_db_connection, create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
+from .db import get_db_connection, create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
 
 mydb = get_db_connection()
 print(mydb)
