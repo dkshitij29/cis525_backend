@@ -24,7 +24,6 @@ async def CreateUser(
     email: str = Form(),
     password_hash: str = Form()
 ):
-    # <--- Added return
     return create_user(
         mydb=mydb,
         firstname=firstname,
@@ -40,7 +39,6 @@ async def UpdateCustomerField(
     field_to_update: str = Form(),
     new_value: str = Form()
 ):
-    # <--- Added return
     return update_customer_field(
         mydb=mydb, 
         identifier_value=identifier_value,
@@ -51,7 +49,6 @@ async def UpdateCustomerField(
 
 @app.get("/get_customer_details")
 async def GetCustomerDetails(email: str):
-    # <--- Added return (this was the one you asked about)
     return get_customer_details(
         mydb,
         email=email
@@ -60,7 +57,6 @@ async def GetCustomerDetails(email: str):
 
 @app.get("/auth")
 async def AuthUser(email: str, password: str):
-    # <--- Added return
     return check_user_credentials(
         mydb,
         email=email,
@@ -70,7 +66,6 @@ async def AuthUser(email: str, password: str):
 
 @app.post("/delete_user")
 async def DeleteUser(email: str = Form()):
-    # <--- Added return
     return delete_user(
         mydb, 
         email=email
@@ -81,15 +76,13 @@ async def DeleteUser(email: str = Form()):
 async def SaveItinerary(
     email: str = Form(),
     itinerary_name: str = Form(),
-    itinerary_data: str = Form() # This will come in as a JSON string
+    itinerary_data: str = Form()
 ):
-    # Convert the JSON string from the form into a Python dictionary
     try:
         itinerary_data_dict = json.loads(itinerary_data)
     except json.JSONDecodeError:
         return {"error": "Invalid JSON format for itinerary_data"}
 
-    # <--- Added return
     return save_itinerary(
         mydb=mydb,
         email=email,
@@ -100,7 +93,6 @@ async def SaveItinerary(
 
 @app.put("/delete_itinerary")
 async def DeleteItinerary(email: str = Form()):
-    # <--- Added return
     return delete_itinerary(
         mydb=mydb,
         email=email
