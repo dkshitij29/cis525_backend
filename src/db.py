@@ -2,6 +2,25 @@ import psycopg2
 import psycopg2.extras
 import bcrypt, json, os
 from dotenv import load_dotenv
+def get_db_connection():
+    load_dotenv() 
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        print("Error: DATABASE_URL environment variable not set.")
+        return None
+
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+        
+    try:
+        conn = psycopg2.connect(db_url)
+        return conn
+    except psycopg2.DatabaseError as e:
+        print(f"Error connecting to database: {e}")
+        return None
+    
+mydb= get_db_connection()
+print(mydb)
 
 def password_hash_function(pwd: str) -> str:
    """Hashes a plaintext password using bcrypt."""
@@ -57,7 +76,7 @@ def create_user(mydb,firstname,lastname,email,password_hash):
         new_id = mycursor.fetchone()[0]
         
         mydb.commit()
-        print(f"User '{email}' created successfully with ID: {new_id}")
+        print(f"User '{email}' created successfully")
         return new_id
     
     except psycopg2.DatabaseError as err:
@@ -101,7 +120,7 @@ def update_customer_field(mydb, identifier_value, field_to_update, new_value):
 def get_customer_details(mydb,email):
     mycursor = None
     try:
-        sql = "SELECT * FROM customers where email = %s"
+        sql = "SELECT first_name, last_name, email FROM customers where email = %s"
         val = (email,)
         
         # DictCursor is great for mapping to Pydantic models
@@ -259,19 +278,5 @@ def get_all_itineraries(mydb, email):
         if mycursor:
             mycursor.close()
 
-def get_db_connection():
-    load_dotenv() 
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        print("Error: DATABASE_URL environment variable not set.")
-        return None
 
-    if db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-        
-    try:
-        conn = psycopg2.connect(db_url)
-        return conn
-    except psycopg2.DatabaseError as e:
-        print(f"Error connecting to database: {e}")
-        return None
+# Removed the extra '}' from here
