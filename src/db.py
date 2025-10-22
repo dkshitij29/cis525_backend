@@ -45,7 +45,6 @@ def check_user_credentials(mydb, email, password) -> bool:
 
         stored_hash = result[0]
         
-        # Use bcrypt.checkpw to securely compare the password
         if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
             print(f"Auth Success: User '{email}' verified.")
             return True
@@ -77,7 +76,7 @@ def create_user(mydb,firstname,lastname,email,password_hash):
         
         mydb.commit()
         print(f"User '{email}' created successfully")
-        return new_id
+        return True
     
     except psycopg2.DatabaseError as err:
         print(f"Error creating user: {err}")
@@ -89,13 +88,12 @@ def create_user(mydb,firstname,lastname,email,password_hash):
 
 def update_customer_field(mydb, identifier_value, field_to_update, new_value):
     mycursor = None
-    # Allowlist is critical for security to prevent SQL injection
     allowed_update_fields = ['first_name', 'last_name', 'email', 'password_hash']
     if field_to_update not in allowed_update_fields:
         print(f"Error: Updating the field '{field_to_update}' is not allowed.")
         return False
     try:
-        # Use f-string ONLY for the whitelisted field_to_update
+
         sql = f"UPDATE customers SET {field_to_update} = %s WHERE email = %s"
         val = (new_value, identifier_value)
         mycursor = mydb.cursor()
@@ -123,7 +121,6 @@ def get_customer_details(mydb,email):
         sql = "SELECT first_name, last_name, email FROM customers where email = %s"
         val = (email,)
         
-        # DictCursor is great for mapping to Pydantic models
         mycursor = mydb.cursor(cursor_factory=psycopg2.extras.DictCursor)
         
         mycursor.execute(sql, val)
@@ -138,7 +135,7 @@ def get_customer_details(mydb,email):
         
     except psycopg2.DatabaseError as err:
         print(f"Database Error getting details: {err}")
-        return None # Return None on error
+        return None
     finally:
         if mycursor:
             mycursor.close()
@@ -146,8 +143,6 @@ def get_customer_details(mydb,email):
 def delete_user(mydb, email):
     mycursor = None
     try:
-        # Assuming you have set up ON DELETE CASCADE in your DB
-        # for itineraries. If not, you must delete itineraries first.
         sql = "DELETE FROM customers WHERE email = %s;"
         val = (email,)
         mycursor = mydb.cursor()
@@ -185,9 +180,6 @@ def save_itinerary(mydb,email,itinerary_name,itinerary_data):
             
         cid = cid[0]
         
-        # Convert dict to JSON string if your column is 'json' or 'text'
-        # If your column is 'jsonb', psycopg2 can handle the dict directly.
-        # Assuming 'jsonb' or 'json'
         itinerary_data_json = json.dumps(itinerary_data) 
         
         sql = """INSERT INTO itineraries (customer_id, itinerary_name, itinerary_data) 
@@ -225,7 +217,7 @@ def delete_itinerary(mydb,email):
 
         if not result:
             print(f"Error: No user found with email '{email}'. Cannot delete itineraries.")
-            return False # Return False if user doesn't exist
+            return False 
         
         customer_id = result[0]
 
@@ -268,15 +260,12 @@ def get_all_itineraries(mydb, email):
         else:
             print(f"No itineraries found for user '{email}'.")
             
-        return itineraries_list # Return list (can be empty)
-        
+        return itineraries_list 
+
     except psycopg2.DatabaseError as err:
         print(f"Database Error getting all itineraries: {err}")
         mydb.rollback()
-        return None # Return None on error
+        return None 
     finally:
         if mycursor:
             mycursor.close()
-
-
-# Removed the extra '}' from here

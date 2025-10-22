@@ -14,10 +14,10 @@ from db import (
 
 # --- Test Data ---
 # Using a unique email is important so we don't conflict with real data
-TEST_EMAIL = "test@umich.edu"
-TEST_PASSWORD = "#tring@CIS525"
-TEST_FIRSTNAME = "kshitij"
-TEST_LASTNAME = "Dhannoda"
+TEST_EMAIL = "test.user.crud.12345@example.com"
+TEST_PASSWORD = "myStrongPassword123!"
+TEST_FIRSTNAME = "Test"
+TEST_LASTNAME = "User"
 
 
 def run_db_tests():
