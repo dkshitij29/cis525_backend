@@ -22,14 +22,14 @@ async def CreateUser(
     firstname: str = Form(),
     lastname: str = Form(),
     email: str = Form(),
-    password_hash: str = Form()
+    password: str = Form()
 ):
     return create_user(
         mydb=mydb,
         firstname=firstname,
         lastname=lastname,
         email=email,
-        password_hash=password_hash
+        password = password
     )
 
 

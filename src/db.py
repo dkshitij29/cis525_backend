@@ -59,7 +59,8 @@ def check_user_credentials(mydb, email, password) -> bool:
         if mycursor:
             mycursor.close()
 
-def create_user(mydb,firstname,lastname,email,password_hash):
+def create_user(mydb,firstname,lastname,email,password):
+    password_hash = password_hash_function(password)
     mycursor = None
     try:
         sql_query = """INSERT INTO customers 
