@@ -1,5 +1,6 @@
 from typing import Optional
 from fastapi import FastAPI, Form
+from starlette.middleware.cors import CORSMiddleware
 import psycopg2
 import psycopg2.extras
 import bcrypt, json, os
