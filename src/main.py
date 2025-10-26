@@ -9,7 +9,23 @@ from .db import get_db_connection, create_user, update_customer_field, get_custo
 mydb = get_db_connection()
 print(mydb)
 
-app = FastAPI()
+origins = [
+    "http://localhost",
+    "http://localhost:3000", # For React (default)
+    "http://localhost:5173", 
+    "http://localhost:8080", 
+    "http://localhost:5000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+app = FastAPI(title="Wed dev backend API")
 
     
 @app.get("/")
