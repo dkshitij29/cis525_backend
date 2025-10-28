@@ -1,26 +1,27 @@
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 import bcrypt, json, os
 from dotenv import load_dotenv
-def get_db_connection():
-    load_dotenv() 
+
+db_pool = None
+
+def init_db_pool():
+    global db_pool
+    load_dotenv()
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
         print("Error: DATABASE_URL environment variable not set.")
         return None
-
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
-        
     try:
-        conn = psycopg2.connect(db_url)
-        return conn
+        db_pool = psycopg2.pool.SimpleConnectionPool(1, 20, db_url)
+        print("Database connection pool initialized.")
+        return db_pool
     except psycopg2.DatabaseError as e:
-        print(f"Error connecting to database: {e}")
+        print(f"Error initializing connection pool: {e}")
         return None
-    
-mydb= get_db_connection()
-print(mydb)
 
 def password_hash_function(pwd: str) -> str:
    """Hashes a plaintext password using bcrypt."""
@@ -28,14 +29,15 @@ def password_hash_function(pwd: str) -> str:
    hashed_bytes = bcrypt.hashpw(pwd.encode('utf-8'), salt)
    return hashed_bytes.decode('utf-8')
 
-def check_user_credentials(mydb, email, password) -> bool:
+def check_user_credentials(  email, password) -> bool:
     """
     Checks if a plaintext password matches the stored hash for a given email.
     """
     mycursor = None
     try:
         sql = "SELECT password_hash FROM customers WHERE email = %s"
-        mycursor = mydb.cursor()
+        conn = db_pool.getconn()
+        mycursor = conn.cursor()
         mycursor.execute(sql, (email,))
         result = mycursor.fetchone()
         
@@ -58,10 +60,10 @@ def check_user_credentials(mydb, email, password) -> bool:
     finally:
         if mycursor:
             mycursor.close()
+            db_pool.putconn(conn)
 
-def create_user(mydb,firstname,lastname,email,password):
+def create_user(firstname,lastname,email,password):
     password_hash = password_hash_function(password)
-    mycursor = None
     try:
         sql_query = """INSERT INTO customers 
                             (first_name, last_name, email, password_hash) 
@@ -70,25 +72,25 @@ def create_user(mydb,firstname,lastname,email,password):
         
         values = (firstname, lastname, email, password_hash)
         
-        mycursor = mydb.cursor()
+        conn = db_pool.getconn()
+        mycursor = conn.cursor()
         mycursor.execute(sql_query, values)
-        
-        new_id = mycursor.fetchone()[0]
-        
-        mydb.commit()
+        conn.commit()
         print(f"User '{email}' created successfully")
         return True
     
     except psycopg2.DatabaseError as err:
         print(f"Error creating user: {err}")
-        mydb.rollback()
+        conn.rollback()
         return None
     finally:
         if mycursor:
-            mycursor.close()
+            db_pool.putconn(conn)
 
-def update_customer_field(mydb, identifier_value, field_to_update, new_value):
+def update_customer_field(identifier_value, field_to_update, new_value):
     mycursor = None
+    conn = db_pool.getconn()
+    mycursor = conn.cursor()
     allowed_update_fields = ['first_name', 'last_name', 'email', 'password_hash']
     if field_to_update not in allowed_update_fields:
         print(f"Error: Updating the field '{field_to_update}' is not allowed.")
@@ -97,9 +99,9 @@ def update_customer_field(mydb, identifier_value, field_to_update, new_value):
 
         sql = f"UPDATE customers SET {field_to_update} = %s WHERE email = %s"
         val = (new_value, identifier_value)
-        mycursor = mydb.cursor()
+        mycursor = conn.cursor()
         mycursor.execute(sql, val)
-        mydb.commit()
+        conn.commit()
         
         if mycursor.rowcount > 0:
             print(f"Success: Updated '{field_to_update}' for user {identifier_value}.")
@@ -110,19 +112,21 @@ def update_customer_field(mydb, identifier_value, field_to_update, new_value):
 
     except psycopg2.DatabaseError as err:
         print(f"Database Error updating field: {err}")
-        mydb.rollback()
+        conn.rollback()
         return False
     finally:
         if mycursor:
-            mycursor.close()
+            db_pool.putconn(conn)
 
-def get_customer_details(mydb,email):
+def get_customer_details(email):
     mycursor = None
     try:
+        conn = db_pool.getconn()
+
         sql = "SELECT first_name, last_name, email FROM customers where email = %s"
         val = (email,)
         
-        mycursor = mydb.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        mycursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         
         mycursor.execute(sql, val)
         customer_data = mycursor.fetchone()
@@ -139,16 +143,17 @@ def get_customer_details(mydb,email):
         return None
     finally:
         if mycursor:
-            mycursor.close()
+            db_pool.putconn(conn)
 
-def delete_user(mydb, email):
+def delete_user(email):
     mycursor = None
     try:
+        conn = db_pool.getconn()
         sql = "DELETE FROM customers WHERE email = %s;"
         val = (email,)
-        mycursor = mydb.cursor()
+        mycursor = conn.cursor()
         mycursor.execute(sql, val)
-        mydb.commit()
+        conn.commit()
         
         if mycursor.rowcount > 0:
             print(f"Successfully deleted user with email '{email}'.")
@@ -159,17 +164,17 @@ def delete_user(mydb, email):
             
     except psycopg2.DatabaseError as err:
         print(f"Database Error deleting user: {err}")
-        mydb.rollback()
+        conn.rollback()
         return False
     finally:
         if mycursor:
-            mycursor.close()
+            db_pool.putconn(conn)
 
-def save_itinerary(mydb,email,itinerary_name,itinerary_data):
+def save_itinerary(email,itinerary_name,itinerary_data):
     mycursor = None
     try:
-        mycursor = mydb.cursor()
-        
+        conn = db_pool.getconn()   
+        mycursor = conn.cursor()        
         sql = "SELECT customer_id FROM customers WHERE email = %s;"
         val = (email,)
         mycursor.execute(sql, val)
@@ -191,26 +196,28 @@ def save_itinerary(mydb,email,itinerary_name,itinerary_data):
         
         mycursor.execute(sql, val)
         new_itinerary_id = mycursor.fetchone()[0]
-        mydb.commit()
+        conn.commit()
         
         print(f"Success: Saved itinerary '{itinerary_name}' (ID: {new_itinerary_id}) for user {email}.")
         return True
             
     except psycopg2.DatabaseError as err:
         print(f"Database Error saving itinerary: {err}")
-        mydb.rollback()
+        conn.rollback()
         return False
     finally:
         if mycursor:
-            mycursor.close()
 
-def delete_itinerary(mydb,email):
+            db_pool.putconn(conn)
+
+def delete_itinerary(email):
     """
     Deletes ALL itineraries associated with a user's email.
     """
     mycursor = None
     try:
-        mycursor = mydb.cursor()
+        conn = db_pool.getconn() 
+        mycursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         sql_get_id = "SELECT customer_id FROM customers WHERE email = %s"
         mycursor.execute(sql_get_id, (email,))
@@ -225,7 +232,7 @@ def delete_itinerary(mydb,email):
         sql_delete = "DELETE FROM itineraries WHERE customer_id = %s"
         mycursor.execute(sql_delete, (customer_id,))
 
-        mydb.commit()
+        conn.commit()
         deleted_count = mycursor.rowcount
         
         print(f"Success: Deleted {deleted_count} itinerary/itineraries for user '{email}'.")
@@ -233,18 +240,19 @@ def delete_itinerary(mydb,email):
 
     except psycopg2.DatabaseError as err:
         print(f"Database Error deleting itineraries: {err}")
-        mydb.rollback()
+        conn.rollback()
         return False
     finally:
         if mycursor:
-            mycursor.close()
+
+            db_pool.putconn(conn)
 
 
-def get_all_itineraries(mydb, email):
+def get_all_itineraries(  email):
     mycursor = None
     try:
-        mycursor = mydb.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
+        conn = db_pool.getconn()
+        mycursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         sql_query = """
             SELECT i.itinerary_id, i.itinerary_name, i.itinerary_data
             FROM itineraries i
@@ -252,7 +260,6 @@ def get_all_itineraries(mydb, email):
             WHERE c.email = %s
             ORDER BY i.itinerary_id DESC; 
         """
-        
         mycursor.execute(sql_query, (email,))
         itineraries_list = mycursor.fetchall()
         
@@ -265,8 +272,12 @@ def get_all_itineraries(mydb, email):
 
     except psycopg2.DatabaseError as err:
         print(f"Database Error getting all itineraries: {err}")
-        mydb.rollback()
+        conn.rollback()
         return None 
     finally:
         if mycursor:
-            mycursor.close()
+
+            db_pool.putconn(conn)
+
+# print(init_db_pool())
+init_db_pool()

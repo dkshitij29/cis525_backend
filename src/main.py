@@ -1,14 +1,9 @@
-from typing import Optional
 from fastapi import FastAPI, Form
 from starlette.middleware.cors import CORSMiddleware
-import psycopg2
-import psycopg2.extras
-import bcrypt, json, os
-from dotenv import load_dotenv
-from .db import get_db_connection, create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
+import db
+#from .db import get_db_connection, create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
 
-mydb = get_db_connection()
-print(mydb)
+
 
 app = FastAPI(title="Wed dev backend API")
 
@@ -42,8 +37,7 @@ async def CreateUser(
     email: str = Form(),
     password: str = Form()
 ):
-    return create_user(
-        mydb=mydb,
+    return db.create_user(
         firstname=firstname,
         lastname=lastname,
         email=email,
@@ -57,8 +51,7 @@ async def UpdateCustomerField(
     field_to_update: str = Form(),
     new_value: str = Form()
 ):
-    return update_customer_field(
-        mydb=mydb, 
+    return db.update_customer_field( 
         identifier_value=identifier_value,
         field_to_update=field_to_update,
         new_value=new_value
@@ -67,16 +60,14 @@ async def UpdateCustomerField(
 
 @app.get("/get_customer_details")
 async def GetCustomerDetails(email: str):
-    return get_customer_details(
-        mydb,
+    return db.get_customer_details(
         email=email
     )
 
 
 @app.get("/auth")
 async def AuthUser(email: str, password: str):
-    return check_user_credentials(
-        mydb,
+    return db.check_user_credentials(
         email=email,
         password=password
     )
@@ -84,8 +75,7 @@ async def AuthUser(email: str, password: str):
 
 @app.post("/delete_user")
 async def DeleteUser(email: str = Form()):
-    return delete_user(
-        mydb, 
+    return db.delete_user(
         email=email
     )
 
@@ -101,8 +91,7 @@ async def SaveItinerary(
     except json.JSONDecodeError:
         return {"error": "Invalid JSON format for itinerary_data"}
 
-    return save_itinerary(
-        mydb=mydb,
+    return db.ave_itinerary(
         email=email,
         itinerary_name=itinerary_name,
         itinerary_data=itinerary_data_dict
@@ -111,8 +100,7 @@ async def SaveItinerary(
 
 @app.put("/delete_itinerary")
 async def DeleteItinerary(email: str = Form()):
-    return delete_itinerary(
-        mydb=mydb,
+    return db.delete_itinerary(
         email=email
     )
 
@@ -120,7 +108,6 @@ async def DeleteItinerary(email: str = Form()):
 @app.get("/get_all_itineraries")
 async def GetAllItineraries(email: str):
     
-    return get_all_itineraries(
-        mydb=mydb, 
+    return db.get_all_itineraries(
         email=email
     )
