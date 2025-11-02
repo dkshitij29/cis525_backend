@@ -46,7 +46,7 @@ async def CreateUser(
     if success:
         return {"message": f"User '{email}' created successfully."}
     else:
-        # Assuming failure is due to a unique constraint violation (email already exists)
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="User creation failed. Email or required data may be invalid/duplicate."
@@ -67,7 +67,7 @@ async def UpdateCustomerField(
     if success:
         return {"message": f"Successfully updated '{field_to_update}' for user '{identifier_value}'."}
     else:
-        # Assuming failure is due to user not found or invalid field
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail=f"Update failed. User '{identifier_value}' not found or field is invalid."
@@ -76,7 +76,7 @@ async def UpdateCustomerField(
 
 @app.get("/get_customer_details", status_code=status.HTTP_200_OK)
 async def GetCustomerDetails(email: str):
-    # FIXED: Ensure you are using db1, not db (which was your old file)
+
     details = db.get_customer_details(
         email=email
     )
@@ -89,7 +89,7 @@ async def GetCustomerDetails(email: str):
         )
 
 
-@app.post("/auth", status_code=status.HTTP_200_OK) # ✅ FIXED: Changed from GET to POST
+@app.post("/auth", status_code=status.HTTP_200_OK) 
 async def AuthUser(email: str = Form(), password: str = Form()):
     customer_id = db.check_user_credentials(
         email=email,
@@ -119,7 +119,7 @@ async def DeleteUser(email: str = Form()):
         )
 
 
-@app.post("/save_itinerary", status_code=status.HTTP_201_CREATED) # Changed to 201 Created
+@app.post("/save_itinerary", status_code=status.HTTP_201_CREATED) 
 async def SaveItinerary(
     email: str = Form(),
     itinerary_name: str = Form(),
@@ -147,7 +147,7 @@ async def SaveItinerary(
         )
 
 
-@app.delete("/delete_itinerary", status_code=status.HTTP_200_OK) # ✅ FIXED: Changed from PUT to DELETE
+@app.delete("/delete_itinerary", status_code=status.HTTP_200_OK) 
 async def DeleteItinerary(email: str = Form()):
     success = db.delete_itinerary(
         email=email
@@ -175,40 +175,3 @@ async def GetAllItineraries(email: str):
             detail="Could not retrieve itineraries due to an internal database error."
         )
 
-
-
-# # def check_user_credentials(email, password) -> int | None: # Signature updated
-#     """
-#     Checks if a plaintext password matches the stored hash for a given email.
-#     Returns the customer_id (int) on success, or None on failure.
-#     """
-#     mycursor = None
-#     try:
-#         # Fetch the customer_id AND the password hash
-#         sql = "SELECT customer_id, password_hash FROM customers WHERE email = %s" 
-#         conn = db_pool.getconn()
-#         mycursor = conn.cursor()
-#         mycursor.execute(sql, (email,))
-#         result = mycursor.fetchone()
-        
-#         if not result:
-#             print(f"Auth Error: No user found with email '{email}'.")
-#             return None # Return None on failure
-
-#         # Unpack results: result[0] is customer_id, result[1] is stored_hash
-#         customer_id, stored_hash = result[0], result[1] 
-        
-#         if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
-#             print(f"Auth Success: User '{email}' verified. ID: {customer_id}")
-#             return customer_id # **Return the ID on success**
-#         else:
-#             print(f"Auth Error: Invalid password for user '{email}'.")
-#             return None
-
-#     except psycopg2.DatabaseError as err:
-#         print(f"Database Error during auth: {err}")
-#         return None
-#     finally:
-#         if mycursor:
-#             mycursor.close()
-#             db_pool.putconn(conn)
