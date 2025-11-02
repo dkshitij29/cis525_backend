@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Form, HTTPException, status
 from starlette.middleware.cors import CORSMiddleware
-from .db import create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
+from db import create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
 import json
 from typing import Optional
 
