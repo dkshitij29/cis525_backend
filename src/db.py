@@ -3,7 +3,7 @@ import json
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from postgrest.exceptions import APIError # Import for specific Supabase error handling
+from postgrest.exceptions import APIError 
 from typing import Dict, Any, List
 
 
