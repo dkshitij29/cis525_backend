@@ -1,0 +1,393 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/userd/Desktop/test/cis525_backend/src
+plugins: asyncio-1.2.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 14 items
+
+testmain.py FFFFFFFFFFFFFF                                               [100%]
+
+=================================== FAILURES ===================================
+____________________________ test_01_root_endpoint _____________________________
+
+client = <async_generator object client at 0x1045ca0a0>
+
+    async def test_01_root_endpoint(client):
+        """Test the basic root health check."""
+>       response = await client.get("/")
+                         ^^^^^^^^^^
+E       AttributeError: 'async_generator' object has no attribute 'get'
+
+testmain.py:45: AttributeError
+_________________________ test_02_create_user_success __________________________
+
+client = <async_generator object client at 0x1045c9a80>
+setup_and_cleanup_user = <async_generator object setup_and_cleanup_user at 0x1045c98c0>
+
+    async def test_02_create_user_success(client, setup_and_cleanup_user):
+        """Test successful user creation."""
+>       response = await client.post(
+                         ^^^^^^^^^^^
+            "/create_user",
+            data={
+                "firstname": TEST_FIRSTNAME,
+                "lastname": TEST_LASTNAME,
+                "email": TEST_EMAIL,
+                "password": TEST_PASSWORD,
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:51: AttributeError
+____________________ test_03_create_user_duplicate_failure _____________________
+
+client = <async_generator object client at 0x1045c9b60>
+
+    async def test_03_create_user_duplicate_failure(client):
+        """Test failure when creating a user with a duplicate email."""
+>       response = await client.post(
+                         ^^^^^^^^^^^
+            "/create_user",
+            data={
+                "firstname": TEST_FIRSTNAME,
+                "lastname": TEST_LASTNAME,
+                "email": TEST_EMAIL,
+                "password": TEST_PASSWORD,
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:65: AttributeError
+_____________________________ test_04_auth_success _____________________________
+
+client = <async_generator object client at 0x1045c89e0>
+
+    async def test_04_auth_success(client):
+        """Test successful user authentication."""
+>       response = await client.post(
+                         ^^^^^^^^^^^
+            "/auth",
+            data={"email": TEST_EMAIL, "password": TEST_PASSWORD},
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:79: AttributeError
+_____________________________ test_05_auth_failure _____________________________
+
+client = <async_generator object client at 0x104644120>
+
+    async def test_05_auth_failure(client):
+        """Test authentication failure with incorrect password."""
+>       response = await client.post(
+                         ^^^^^^^^^^^
+            "/auth",
+            data={"email": TEST_EMAIL, "password": "wrongpassword"},
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:89: AttributeError
+_____________________ test_06_get_customer_details_success _____________________
+
+client = <async_generator object client at 0x1045c9540>
+
+    async def test_06_get_customer_details_success(client):
+        """Test fetching customer details."""
+>       response = await client.get(f"/get_customer_details?email={TEST_EMAIL}")
+                         ^^^^^^^^^^
+E       AttributeError: 'async_generator' object has no attribute 'get'
+
+testmain.py:98: AttributeError
+____________________ test_07_update_customer_field_success _____________________
+
+client = <async_generator object client at 0x1046452a0>
+
+    async def test_07_update_customer_field_success(client):
+        """Test updating the user's first name."""
+        new_name = "NewTestName"
+>       response = await client.put(
+                         ^^^^^^^^^^
+            "/update_customer_field",
+            data={
+                "identifier_value": TEST_EMAIL,
+                "field_to_update": "first_name",
+                "new_value": new_name,
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'put'
+
+testmain.py:106: AttributeError
+____________________ test_08_update_customer_field_failure _____________________
+
+client = <async_generator object client at 0x1045cbae0>
+
+    async def test_08_update_customer_field_failure(client):
+        """Test update failure for a non-existent field."""
+>       response = await client.put(
+                         ^^^^^^^^^^
+            "/update_customer_field",
+            data={
+                "identifier_value": TEST_EMAIL,
+                "field_to_update": "non_existent_field",
+                "new_value": "some_value",
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'put'
+
+testmain.py:123: AttributeError
+________________________ test_09_save_itinerary_success ________________________
+
+client = <async_generator object client at 0x104646500>
+
+    async def test_09_save_itinerary_success(client):
+        """Test saving an itinerary."""
+        itinerary_data_json = json.dumps({"day": 1, "city": "London", "activity": "Tower Bridge"})
+>       response = await client.post(
+                         ^^^^^^^^^^^
+            "/save_itinerary",
+            data={
+                "email": TEST_EMAIL,
+                "itinerary_name": "London Trip",
+                "itinerary_data": itinerary_data_json,
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:139: AttributeError
+_____________________ test_10_save_itinerary_invalid_json ______________________
+
+client = <async_generator object client at 0x1045c8f20>
+
+    async def test_10_save_itinerary_invalid_json(client):
+        """Test saving itinerary with invalid JSON data."""
+>       response = await client.post(
+                         ^^^^^^^^^^^
+            "/save_itinerary",
+            data={
+                "email": TEST_EMAIL,
+                "itinerary_name": "Bad Trip",
+                "itinerary_data": "not valid json",
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:152: AttributeError
+_____________________ test_11_get_all_itineraries_success ______________________
+
+client = <async_generator object client at 0x1046475a0>
+
+    async def test_11_get_all_itineraries_success(client):
+        """Test fetching all itineraries for the user."""
+        # Save a second itinerary
+        itinerary_data_json = json.dumps({"day": 2, "city": "Paris", "activity": "Louvre"})
+>       await client.post(
+              ^^^^^^^^^^^
+            "/save_itinerary",
+            data={
+                "email": TEST_EMAIL,
+                "itinerary_name": "Paris Trip",
+                "itinerary_data": itinerary_data_json,
+            },
+        )
+E       AttributeError: 'async_generator' object has no attribute 'post'
+
+testmain.py:167: AttributeError
+_______________________ test_12_delete_itinerary_success _______________________
+
+client = <async_generator object client at 0x1046460a0>
+
+    async def test_12_delete_itinerary_success(client):
+        """Test deleting all itineraries for a user."""
+>       response = await client.delete(
+                         ^^^^^^^^^^^^^
+            "/delete_itinerary", data={"email": TEST_EMAIL}
+        )
+E       AttributeError: 'async_generator' object has no attribute 'delete'
+
+testmain.py:187: AttributeError
+_________________________ test_13_delete_user_success __________________________
+
+client = <async_generator object client at 0x1046465e0>
+setup_and_cleanup_user = <async_generator object setup_and_cleanup_user at 0x1046466c0>
+
+    async def test_13_delete_user_success(client, setup_and_cleanup_user):
+        """Test successful user deletion."""
+        # Note: The cleanup fixture relies on this endpoint, but we test the success case here.
+>       response = await client.delete("/delete_user", data={"email": TEST_EMAIL})
+                         ^^^^^^^^^^^^^
+E       AttributeError: 'async_generator' object has no attribute 'delete'
+
+testmain.py:205: AttributeError
+_________________________ test_14_delete_user_failure __________________________
+
+client = <async_generator object client at 0x104644e40>
+
+    async def test_14_delete_user_failure(client):
+        """Test deletion failure for a non-existent user."""
+        # The user should be deleted by the previous test/fixture
+>       response = await client.delete("/delete_user", data={"email": TEST_EMAIL})
+                         ^^^^^^^^^^^^^
+E       AttributeError: 'async_generator' object has no attribute 'delete'
+
+testmain.py:212: AttributeError
+=============================== warnings summary ===============================
+testmain.py::test_01_root_endpoint
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_01_root_endpoint' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_01_root_endpoint
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_01_root_endpoint' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_02_create_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_02_create_user_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_02_create_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_02_create_user_success' requested an async fixture 'setup_and_cleanup_user', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_02_create_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_02_create_user_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_02_create_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_02_create_user_success' requested async @pytest.fixture 'setup_and_cleanup_user' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_03_create_user_duplicate_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_03_create_user_duplicate_failure' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_03_create_user_duplicate_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_03_create_user_duplicate_failure' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_04_auth_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_04_auth_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_04_auth_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_04_auth_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_05_auth_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_05_auth_failure' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_05_auth_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_05_auth_failure' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_06_get_customer_details_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_06_get_customer_details_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_06_get_customer_details_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_06_get_customer_details_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_07_update_customer_field_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_07_update_customer_field_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_07_update_customer_field_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_07_update_customer_field_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_08_update_customer_field_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_08_update_customer_field_failure' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_08_update_customer_field_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_08_update_customer_field_failure' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_09_save_itinerary_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_09_save_itinerary_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_09_save_itinerary_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_09_save_itinerary_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_10_save_itinerary_invalid_json
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_10_save_itinerary_invalid_json' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_10_save_itinerary_invalid_json
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_10_save_itinerary_invalid_json' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_11_get_all_itineraries_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_11_get_all_itineraries_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_11_get_all_itineraries_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_11_get_all_itineraries_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_12_delete_itinerary_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_12_delete_itinerary_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_12_delete_itinerary_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_12_delete_itinerary_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_13_delete_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_13_delete_user_success' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_13_delete_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_13_delete_user_success' requested an async fixture 'setup_and_cleanup_user', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_13_delete_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_13_delete_user_success' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_13_delete_user_success
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_13_delete_user_success' requested async @pytest.fixture 'setup_and_cleanup_user' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+testmain.py::test_14_delete_user_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/_pytest/fixtures.py:1182: PytestRemovedIn9Warning: 'test_14_delete_user_failure' requested an async fixture 'client', with no plugin or hook that handled it. This is usually an error, as pytest does not natively support it. This will turn into an error in pytest 9.
+  See: https://docs.pytest.org/en/stable/deprecations.html#sync-test-depending-on-async-fixture
+    warnings.warn(
+
+testmain.py::test_14_delete_user_failure
+  /Users/userd/miniconda3/envs/cis525/lib/python3.13/site-packages/pytest_asyncio/plugin.py:678: PytestDeprecationWarning: asyncio test 'test_14_delete_user_failure' requested async @pytest.fixture 'client' in strict mode. You might want to use @pytest_asyncio.fixture or switch to auto mode. This will become an error in future versions of pytest-asyncio.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED testmain.py::test_01_root_endpoint - AttributeError: 'async_generator'...
+FAILED testmain.py::test_02_create_user_success - AttributeError: 'async_gene...
+FAILED testmain.py::test_03_create_user_duplicate_failure - AttributeError: '...
+FAILED testmain.py::test_04_auth_success - AttributeError: 'async_generator' ...
+FAILED testmain.py::test_05_auth_failure - AttributeError: 'async_generator' ...
+FAILED testmain.py::test_06_get_customer_details_success - AttributeError: 'a...
+FAILED testmain.py::test_07_update_customer_field_success - AttributeError: '...
+FAILED testmain.py::test_08_update_customer_field_failure - AttributeError: '...
+FAILED testmain.py::test_09_save_itinerary_success - AttributeError: 'async_g...
+FAILED testmain.py::test_10_save_itinerary_invalid_json - AttributeError: 'as...
+FAILED testmain.py::test_11_get_all_itineraries_success - AttributeError: 'as...
+FAILED testmain.py::test_12_delete_itinerary_success - AttributeError: 'async...
+FAILED testmain.py::test_13_delete_user_success - AttributeError: 'async_gene...
+FAILED testmain.py::test_14_delete_user_failure - AttributeError: 'async_gene...
+======================= 14 failed, 32 warnings in 0.08s ========================
