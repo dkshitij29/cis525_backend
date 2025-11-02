@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Form, HTTPException, status
 from starlette.middleware.cors import CORSMiddleware
-# import db
 from .db import create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
 import json
 from typing import Optional
@@ -11,10 +10,8 @@ app = FastAPI(title="Web dev backend API")
 
 origins = [
     "http://localhost",
-    "http://localhost:3000", # For React (default)
-    "http://localhost:5173", 
-    "http://localhost:8080", 
-    "http://localhost:5000",
+    "http://localhost:5173",
+    "https://cis525-frontend.onrender.com",
 ]
 
 app.add_middleware(
