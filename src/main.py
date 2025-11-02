@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Form, HTTPException, status
 from starlette.middleware.cors import CORSMiddleware
-import db
-# from db import create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
+# import db
+from .db import create_user, update_customer_field, get_customer_details, check_user_credentials, delete_user, save_itinerary, delete_itinerary, get_all_itineraries
 import json
 from typing import Optional
 
@@ -38,7 +38,7 @@ async def CreateUser(
     email: str = Form(),
     password: str = Form()
 ):
-    success = db.create_user(
+    success = create_user(
         firstname=firstname,
         lastname=lastname,
         email=email,
@@ -60,7 +60,7 @@ async def UpdateCustomerField(
     field_to_update: str = Form(),
     new_value: str = Form()
 ):
-    success = db.update_customer_field( 
+    success = update_customer_field( 
         identifier_value=identifier_value,
         field_to_update=field_to_update,
         new_value=new_value
@@ -78,7 +78,7 @@ async def UpdateCustomerField(
 @app.get("/get_customer_details", status_code=status.HTTP_200_OK)
 async def GetCustomerDetails(email: str):
 
-    details = db.get_customer_details(
+    details = get_customer_details(
         email=email
     )
     if details:
@@ -92,7 +92,7 @@ async def GetCustomerDetails(email: str):
 
 @app.post("/auth", status_code=status.HTTP_200_OK) 
 async def AuthUser(email: str = Form(), password: str = Form()):
-    customer_id = db.check_user_credentials(
+    customer_id = check_user_credentials(
         email=email,
         password=password
     )
@@ -108,7 +108,7 @@ async def AuthUser(email: str = Form(), password: str = Form()):
 
 @app.delete("/delete_user", status_code=status.HTTP_200_OK) 
 async def DeleteUser(email: str = Form()):
-    success = db.delete_user(
+    success = delete_user(
         email=email
     )
     if success:
@@ -134,7 +134,7 @@ async def SaveItinerary(
             detail="Invalid JSON format for itinerary_data"
         )
 
-    success = db.save_itinerary(
+    success = save_itinerary(
         email=email,
         itinerary_name=itinerary_name,
         itinerary_data=itinerary_data_dict
@@ -150,7 +150,7 @@ async def SaveItinerary(
 
 @app.delete("/delete_itinerary", status_code=status.HTTP_200_OK) 
 async def DeleteItinerary(email: str = Form()):
-    success = db.delete_itinerary(
+    success = delete_itinerary(
         email=email
     )
     if success:
@@ -164,7 +164,7 @@ async def DeleteItinerary(email: str = Form()):
 
 @app.get("/get_all_itineraries", status_code=status.HTTP_200_OK)
 async def GetAllItineraries(email: str):
-    data = db.get_all_itineraries(
+    data = get_all_itineraries(
         email=email
     )
     if data is not None:
