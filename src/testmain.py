@@ -1,6 +1,7 @@
 import json
 import db
-
+import sys
+# sys.path.append('.') # If db1.py is not in the same directory, uncomment this
 
 TEST_EMAIL = "test.user.crud.12345@example.com"
 TEST_PASSWORD = "myStrongPassword123!"
@@ -9,20 +10,20 @@ TEST_LASTNAME = "User"
 
 
 def run_db_tests():
-    """Runs a sequence of tests on the db.py functions."""
+    """Runs a sequence of tests on the db1.py functions."""
     
-    print("--- Starting Database Function Test ---")
+    print("--- Starting Database Function Test (Supabase) ---")
     
-    # if not db.init_db_pool():
-    #     print("CRITICAL: Could not connect to database. Aborting tests.")
-    #     return
+    # ----------------------------------------------------
+    # REMOVED: init_db_pool() is obsolete with the Supabase client
+    # ----------------------------------------------------
     
-    print(f"Successfully connected to database: {not db.init_db_pool()}\n")
 
     try:
 
         print(f"STEP 0: Pre-test cleanup for user '{TEST_EMAIL}'...")
-        db.delete_user( TEST_EMAIL)
+        # Note: If this fails initially because the user doesn't exist, it's fine.
+        db.delete_user(TEST_EMAIL) 
         print("Pre-test cleanup complete.\n")
 
         # --- TEST 1: HASHING ---
@@ -35,36 +36,39 @@ def run_db_tests():
 
         # --- TEST 2: CREATE USER ---
         print(f"STEP 2: Testing create_user() with email '{TEST_EMAIL}'...")
-        new_user_id = db.create_user( TEST_FIRSTNAME, TEST_LASTNAME, TEST_EMAIL, hashed_password)
-        assert new_user_id is not None
-        print(f"  > SUCCESS: User created with ID: {new_user_id}\n")
+        # The db1.create_user function now returns True/False, not the ID directly
+        success = db.create_user(TEST_FIRSTNAME, TEST_LASTNAME, TEST_EMAIL, TEST_PASSWORD)
+        assert success == True
+        print("  > SUCCESS: User created.\n")
 
         # --- TEST 3: AUTHENTICATION (SUCCESS) ---
         print(f"STEP 3: Testing check_user_credentials() (Correct Password)...")
-        is_valid = db.check_user_credentials(TEST_EMAIL, TEST_PASSWORD)
-        print(f"  > Result: {is_valid}")
-        assert is_valid == True
+        # check_user_credentials now returns the ID (int) on success, or None.
+        customer_id = db.check_user_credentials(TEST_EMAIL, TEST_PASSWORD)
+        print(f"  > Resulting customer_id: {customer_id}")
+        assert isinstance(customer_id, int)
         print("  > SUCCESS: Authentication check passed.\n")
 
         # --- TEST 4: AUTHENTICATION (FAILURE) ---
         print(f"STEP 4: Testing check_user_credentials() (Incorrect Password)...")
         is_invalid = db.check_user_credentials(TEST_EMAIL, "wrongpassword123")
         print(f"  > Result: {is_invalid}")
-        assert is_invalid == False
+        assert is_invalid is None
         print("  > SUCCESS: Authentication check correctly failed.\n")
 
         # --- TEST 5: GET DETAILS ---
         print(f"STEP 5: Testing get_customer_details()...")
         details = db.get_customer_details(TEST_EMAIL)
         print(f"  > Result: {details}")
+        assert details is not None
         assert details['first_name'] == TEST_FIRSTNAME
-        assert 'customer_id' not in details  # Per your recent change
+        assert details['email'] == TEST_EMAIL
         print("  > SUCCESS: Correct customer details fetched.\n")
 
         # --- TEST 6: UPDATE FIELD ---
         print(f"STEP 6: Testing update_customer_field()...")
         new_name = "UpdatedFirstName"
-        update_success = udb.pdate_customer_field(TEST_EMAIL, "first_name", new_name)
+        update_success = db.update_customer_field(TEST_EMAIL, "first_name", new_name)
         assert update_success == True
         # Verify the change
         details_updated = db.get_customer_details(TEST_EMAIL)
@@ -88,8 +92,8 @@ def run_db_tests():
         all_itineraries = db.get_all_itineraries(TEST_EMAIL)
         print(f"  > Found {len(all_itineraries)} itineraries.")
         assert len(all_itineraries) == 2
-        print(f"  > Itinerary 1: {all_itineraries[0]['itinerary_name']}")
-        print(f"  > Itinerary 2: {all_itineraries[1]['itinerary_name']}")
+        print(f"  > Itinerary 1 Name: {all_itineraries[0]['itinerary_name']}")
+        print(f"  > Itinerary 2 Name: {all_itineraries[1]['itinerary_name']}")
         print("  > SUCCESS: Correctly fetched all itineraries.\n")
 
         # --- TEST 9: DELETE ITINERARIES ---
@@ -123,9 +127,9 @@ def run_db_tests():
         assert final_check is None
         print("  > User successfully deleted.")
         
-        if db.init_db_pool():
-            db.db_pool.closeall()
-            print("\nDatabase connection closed.")
+        # ----------------------------------------------------
+        # REMOVED: db_pool closure is obsolete
+        # ----------------------------------------------------
             
         print("--- Test Script Finished ---")
 

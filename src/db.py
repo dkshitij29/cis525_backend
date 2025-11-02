@@ -1,27 +1,30 @@
-import psycopg2
-import psycopg2.extras
-import psycopg2.pool
-import bcrypt, json, os
+import bcrypt
+import json
+import os
 from dotenv import load_dotenv
+from supabase import create_client, Client
+from postgrest.exceptions import APIError # Import for specific Supabase error handling
+from typing import Dict, Any, List
 
-db_pool = None
 
-def init_db_pool():
-    global db_pool
-    load_dotenv()
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        print("Error: DATABASE_URL environment variable not set.")
-        return None
-    if db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-    try:
-        db_pool = psycopg2.pool.SimpleConnectionPool(1, 20, db_url)
-        print("Database connection pool initialized.")
-        return db_pool
-    except psycopg2.DatabaseError as e:
-        print(f"Error initializing connection pool: {e}")
-        return None
+load_dotenv()
+
+url: str = os.environ.get("SUPABASE_URL") 
+key: str = os.environ.get("SUPABASE_KEY")
+
+if not url or not key:
+    raise EnvironmentError("SUPABASE_URL or SUPABASE_KEY environment variables not set.")
+
+try:
+    supabase: Client = create_client(url, key)
+    print("Supabase client initialized.")
+except Exception as e:
+    print(f"Error initializing Supabase client: {e}")
+    # In a real app, you might want to exit or fail startup here
+    supabase = None 
+
+
+
 
 def password_hash_function(pwd: str) -> str:
    """Hashes a plaintext password using bcrypt."""
@@ -29,255 +32,269 @@ def password_hash_function(pwd: str) -> str:
    hashed_bytes = bcrypt.hashpw(pwd.encode('utf-8'), salt)
    return hashed_bytes.decode('utf-8')
 
-def check_user_credentials(  email, password) -> bool:
-    """
-    Checks if a plaintext password matches the stored hash for a given email.
-    """
-    mycursor = None
-    try:
-        sql = "SELECT password_hash FROM customers WHERE email = %s"
-        conn = db_pool.getconn()
-        mycursor = conn.cursor()
-        mycursor.execute(sql, (email,))
-        result = mycursor.fetchone()
-        
-        if not result:
-            print(f"Auth Error: No user found with email '{email}'.")
-            return False
 
-        stored_hash = result[0]
+
+def check_user_credentials(email: str, password: str) -> int | None:
+    """
+    Fetches user hash and verifies password. 
+    Returns customer_id on success, None otherwise.
+    """
+    try:
+
+        response = (
+            supabase.table("customers")
+            .select("customer_id, password_hash") 
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
         
+        if not response.data:
+            print(f"Auth Error: No user found with email '{email}'.")
+            return None 
+
+        user_data = response.data[0]
+        customer_id, stored_hash = user_data['customer_id'], user_data['password_hash']
+        
+
         if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
-            print(f"Auth Success: User '{email}' verified.")
-            return True
+            print(f"Auth Success: User '{email}' verified. ID: {customer_id}")
+            return customer_id 
         else:
             print(f"Auth Error: Invalid password for user '{email}'.")
-            return False
+            return None
 
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error during auth: {err}")
-        return False
-    finally:
-        if mycursor:
-            mycursor.close()
-            db_pool.putconn(conn)
+    except APIError as err:
+        print(f"Supabase API Error during auth: {err.message}")
+        return None
+    except Exception as err:
+        print(f"Unexpected Error during auth: {err}")
+        return None
 
-def create_user(firstname,lastname,email,password):
+def create_user(firstname: str, lastname: str, email: str, password: str) -> bool:
+    """Creates a new user record."""
     password_hash = password_hash_function(password)
     try:
-        sql_query = """INSERT INTO customers 
-                            (first_name, last_name, email, password_hash) 
-                       VALUES (%s, %s, %s, %s)
-                       RETURNING customer_id"""
-        
-        values = (firstname, lastname, email, password_hash)
-        
-        conn = db_pool.getconn()
-        mycursor = conn.cursor()
-        mycursor.execute(sql_query, values)
-        conn.commit()
-        print(f"User '{email}' created successfully")
+        response = (
+            supabase.table("customers")
+            .insert({
+                "first_name": firstname, 
+                "last_name": lastname, 
+                "email": email, 
+                "password_hash": password_hash
+            })
+            .execute()
+        )
+        print(f"User '{email}' created successfully. ID: {response.data[0]['customer_id']}")
         return True
     
-    except psycopg2.DatabaseError as err:
-        print(f"Error creating user: {err}")
-        conn.rollback()
-        return None
-    finally:
-        if mycursor:
-            db_pool.putconn(conn)
+    except APIError as err:
+        print(f"Supabase API Error creating user: {err.message}")
 
-def update_customer_field(identifier_value, field_to_update, new_value):
-    mycursor = None
-    conn = db_pool.getconn()
-    mycursor = conn.cursor()
+        return False
+    except Exception as err:
+        print(f"Unexpected Error creating user: {err}")
+        return False
+
+def update_customer_field(identifier_value: str, field_to_update: str, new_value: Any) -> bool:
+    """Updates a single field for a user identified by email."""
     allowed_update_fields = ['first_name', 'last_name', 'email', 'password_hash']
     if field_to_update not in allowed_update_fields:
         print(f"Error: Updating the field '{field_to_update}' is not allowed.")
         return False
-    try:
-
-        sql = f"UPDATE customers SET {field_to_update} = %s WHERE email = %s"
-        val = (new_value, identifier_value)
-        mycursor = conn.cursor()
-        mycursor.execute(sql, val)
-        conn.commit()
         
-        if mycursor.rowcount > 0:
+    try:
+        update_data = {field_to_update: new_value}
+        
+        response = (
+            supabase.table("customers")
+            .update(update_data)
+            .eq("email", identifier_value)
+            .execute()
+        )
+        
+        if response.count is not None and response.count > 0:
+            print(f"Success: Updated '{field_to_update}' for user {identifier_value}.")
+            return True
+        elif response.data:
+            # Fallback check for update response structure
             print(f"Success: Updated '{field_to_update}' for user {identifier_value}.")
             return True
         else:
             print(f"Notice: No user found with email {identifier_value}. Nothing updated.")
             return False
 
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error updating field: {err}")
-        conn.rollback()
+    except APIError as err:
+        print(f"Supabase API Error updating field: {err.message}")
         return False
-    finally:
-        if mycursor:
-            db_pool.putconn(conn)
+    except Exception as err:
+        print(f"Unexpected Error updating field: {err}")
+        return False
 
-def get_customer_details(email):
-    mycursor = None
+def get_customer_details(email: str) -> Dict[str, Any] | None:
+    """Fetches a customer's non-sensitive details."""
     try:
-        conn = db_pool.getconn()
-
-        sql = "SELECT first_name, last_name, email FROM customers where email = %s"
-        val = (email,)
+        response = (
+            supabase.table("customers")
+            .select("first_name, last_name, email")
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
         
-        mycursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        
-        mycursor.execute(sql, val)
-        customer_data = mycursor.fetchone()
-        
-        if customer_data:
-            print("Customer Found:", dict(customer_data))
+        if response.data:
+            customer_data = response.data[0]
+            print("Customer Found:", customer_data)
             return customer_data
         else:
             print("No customer found with that email.")
             return None
         
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error getting details: {err}")
+    except APIError as err:
+        print(f"Supabase API Error getting details: {err.message}")
         return None
-    finally:
-        if mycursor:
-            db_pool.putconn(conn)
+    except Exception as err:
+        print(f"Unexpected Error getting details: {err}")
+        return None
 
-def delete_user(email):
-    mycursor = None
+def delete_user(email: str) -> bool:
+    """Deletes a user record."""
     try:
-        conn = db_pool.getconn()
-        sql = "DELETE FROM customers WHERE email = %s;"
-        val = (email,)
-        mycursor = conn.cursor()
-        mycursor.execute(sql, val)
-        conn.commit()
+        response = (
+            supabase.table("customers")
+            .delete()
+            .eq("email", email)
+            .execute()
+        )
         
-        if mycursor.rowcount > 0:
+        if response.count is not None and response.count > 0:
             print(f"Successfully deleted user with email '{email}'.")
             return True
         else:
             print(f"No user found with email '{email}'. Nothing deleted.")
             return False
             
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error deleting user: {err}")
-        conn.rollback()
+    except APIError as err:
+        print(f"Supabase API Error deleting user: {err.message}")
         return False
-    finally:
-        if mycursor:
-            db_pool.putconn(conn)
+    except Exception as err:
+        print(f"Unexpected Error deleting user: {err}")
+        return False
 
-def save_itinerary(email,itinerary_name,itinerary_data):
-    mycursor = None
+# --- Itinerary Functions ---
+
+def save_itinerary(email: str, itinerary_name: str, itinerary_data: Dict[str, Any]) -> bool:
+    """Saves a new itinerary linked to a customer's email."""
     try:
-        conn = db_pool.getconn()   
-        mycursor = conn.cursor()        
-        sql = "SELECT customer_id FROM customers WHERE email = %s;"
-        val = (email,)
-        mycursor.execute(sql, val)
-        cid = mycursor.fetchone()
+        # 1. Get customer_id
+        response_id = (
+            supabase.table("customers")
+            .select("customer_id")
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
         
-        if not cid:
+        if not response_id.data:
             print(f"Error: No user found with email '{email}'. Cannot save itinerary.")
             return False
             
-        cid = cid[0]
+        cid = response_id.data[0]['customer_id']
         
-        itinerary_data_json = json.dumps(itinerary_data) 
+        # 2. Insert itinerary data
+        response_itinerary = (
+            supabase.table("itineraries")
+            .insert({
+                "customer_id": cid, 
+                "itinerary_name": itinerary_name, 
+                "itinerary_data": itinerary_data # Supabase handles dict -> JSONB
+            })
+            .execute()
+        )
         
-        sql = """INSERT INTO itineraries (customer_id, itinerary_name, itinerary_data) 
-                 VALUES (%s, %s, %s)
-                 RETURNING itinerary_id;"""
-        
-        val = (cid, itinerary_name, itinerary_data_json)
-        
-        mycursor.execute(sql, val)
-        new_itinerary_id = mycursor.fetchone()[0]
-        conn.commit()
-        
+        new_itinerary_id = response_itinerary.data[0]['itinerary_id']
         print(f"Success: Saved itinerary '{itinerary_name}' (ID: {new_itinerary_id}) for user {email}.")
         return True
             
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error saving itinerary: {err}")
-        conn.rollback()
+    except APIError as err:
+        print(f"Supabase API Error saving itinerary: {err.message}")
         return False
-    finally:
-        if mycursor:
+    except Exception as err:
+        print(f"Unexpected Error saving itinerary: {err}")
+        return False
 
-            db_pool.putconn(conn)
-
-def delete_itinerary(email):
-    """
-    Deletes ALL itineraries associated with a user's email.
-    """
-    mycursor = None
+def delete_itinerary(email: str) -> bool:
+    """Deletes ALL itineraries associated with a user's email."""
     try:
-        conn = db_pool.getconn() 
-        mycursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-        sql_get_id = "SELECT customer_id FROM customers WHERE email = %s"
-        mycursor.execute(sql_get_id, (email,))
-        result = mycursor.fetchone()
-
-        if not result:
+        # 1. Get customer_id
+        sql_get_id = (
+            supabase.table("customers")
+            .select("customer_id")
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
+        
+        if not sql_get_id.data:
             print(f"Error: No user found with email '{email}'. Cannot delete itineraries.")
             return False 
         
-        customer_id = result[0]
+        customer_id = sql_get_id.data[0]['customer_id']
 
-        sql_delete = "DELETE FROM itineraries WHERE customer_id = %s"
-        mycursor.execute(sql_delete, (customer_id,))
+        # 2. Delete itineraries by customer_id
+        response_delete = (
+            supabase.table("itineraries")
+            .delete()
+            .eq("customer_id", customer_id)
+            .execute()
+        )
 
-        conn.commit()
-        deleted_count = mycursor.rowcount
+        deleted_count = response_delete.count if response_delete.count is not None else len(response_delete.data)
         
         print(f"Success: Deleted {deleted_count} itinerary/itineraries for user '{email}'.")
         return True
 
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error deleting itineraries: {err}")
-        conn.rollback()
+    except APIError as err:
+        print(f"Supabase API Error deleting itineraries: {err.message}")
         return False
-    finally:
-        if mycursor:
+    except Exception as err:
+        print(f"Unexpected Error deleting itineraries: {err}")
+        return False
 
-            db_pool.putconn(conn)
 
-
-def get_all_itineraries(  email):
-    mycursor = None
+def get_all_itineraries(email: str) -> List[Dict[str, Any]] | None:
+    """Fetches all itineraries for a given user email using a join."""
     try:
-        conn = db_pool.getconn()
-        mycursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        sql_query = """
-            SELECT i.itinerary_id, i.itinerary_name, i.itinerary_data
-            FROM itineraries i
-            JOIN customers c ON i.customer_id = c.customer_id
-            WHERE c.email = %s
-            ORDER BY i.itinerary_id DESC; 
-        """
-        mycursor.execute(sql_query, (email,))
-        itineraries_list = mycursor.fetchall()
+        # Supabase API does the join via foreign key relationship in the 'select' string
+        sql_query = (
+            supabase.table("itineraries")
+            .select("itinerary_id, itinerary_name, itinerary_data, customers!inner(email)")
+            .eq("customers.email", email)
+            .order("itinerary_id", desc=True)
+            .execute()
+        )
+        
+        # The result includes the nested 'customers' field. We extract the core itinerary data.
+        itineraries_list = []
+        for item in sql_query.data:
+            # Clean the data to match the original function's output structure
+            clean_item = {
+                'itinerary_id': item['itinerary_id'],
+                'itinerary_name': item['itinerary_name'],
+                'itinerary_data': item['itinerary_data'],
+            }
+            itineraries_list.append(clean_item)
         
         if itineraries_list:
             print(f"Found {len(itineraries_list)} itineraries for user '{email}'.")
         else:
             print(f"No itineraries found for user '{email}'.")
             
-        return itineraries_list 
+        return itineraries_list
 
-    except psycopg2.DatabaseError as err:
-        print(f"Database Error getting all itineraries: {err}")
-        conn.rollback()
-        return None 
-    finally:
-        if mycursor:
-
-            db_pool.putconn(conn)
-
-# print(init_db_pool())
-init_db_pool()
+    except APIError as err:
+        print(f"Supabase API Error getting all itineraries: {err.message}")
+        return None
+    except Exception as err:
+        print(f"Unexpected Error getting all itineraries: {err}")
+        return None
